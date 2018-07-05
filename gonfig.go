@@ -2,110 +2,62 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"reflect"
+	"path"
+
+	"github.com/eduardbcom/gonfig/internal"
 )
 
 // Read ...
-func Read(configDirFullPath string, config interface{}) (err error) {
-	if err = checkConfigFolder(configDirFullPath); err != nil {
-		return
+func Read() ([]byte, error) {
+	var err error
+
+	var configDirPath string
+
+	configDirPath, err = internal.GetConfigDirPath()
+
+	if err != nil {
+		return nil, err
 	}
 
-	appEnv := getAppEnv()
+	appEnv := internal.GetAppEnv()
 
-	defaultConfigData := make(map[string]interface{})
-	envConfigData := make(map[string]interface{})
-	localEnvConfigData := make(map[string]interface{})
+	var defaultConfig *internal.Config
+	var envConfig *internal.Config
+	var localEnvConfig *internal.Config
 
-	defaultConfigData = readJSONFile(configDirFullPath, "default.json")
+	defaultConfig, err = internal.NewConfig(path.Join(configDirPath, "default.json"))
+	if err != nil {
+		return nil, err
+	}
 
 	if len(appEnv) > 0 {
-		envConfigData = readJSONFile(configDirFullPath, fmt.Sprintf("%s.json", appEnv))
-		localEnvConfigData = readJSONFile(configDirFullPath, fmt.Sprintf("local-%s.json", appEnv))
+		envConfig, err = internal.NewConfig(path.Join(configDirPath, fmt.Sprintf("%s.json", appEnv)))
+		if err != nil {
+			return nil, err
+		}
+
+		localEnvConfig, err = internal.NewConfig(path.Join(configDirPath, fmt.Sprintf("local-%s.json", appEnv)))
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	joinedConfigData := joinConfigData(defaultConfigData, envConfigData, localEnvConfigData)
+	entireConfig := internal.JoinConfigs(defaultConfig, envConfig, localEnvConfig)
 
-	var data []byte
-	data, err = json.Marshal(joinedConfigData)
+	var configSchema *internal.Schema
+
+	configSchema, err = internal.NewSchema(path.Join(configDirPath, "schema"))
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func checkConfigFolder(configDirFullPath string) (err error) {
-	if _, err = os.Stat(configDirFullPath); err != nil {
-		if os.IsNotExist(err) {
-			err = errors.New("config directory does not exist")
+	if configSchema != nil {
+		err = configSchema.Validate(entireConfig)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return
-}
-
-func getAppEnv() string {
-	appEnv, ok := os.LookupEnv("APP_ENV")
-
-	if ok != true {
-		return ""
-	}
-
-	return appEnv
-}
-
-func readJSONFile(configDirFullPath, filename string) (configData map[string]interface{}) {
-	configData = make(map[string]interface{})
-
-	fileFullPath := filepath.Join(configDirFullPath, filename)
-
-	if content, e := ioutil.ReadFile(fileFullPath); e != nil {
-		if os.IsNotExist(e) == false {
-			panic(e)
-		}
-	} else {
-		json.Unmarshal(content, &configData)
-	}
-
-	return configData
-}
-
-func joinConfigData(configs ...map[string]interface{}) (result map[string]interface{}) {
-	result = make(map[string]interface{})
-
-	for _, configData := range configs {
-		result = mergeMaps(result, configData)
-	}
-
-	return result
-}
-
-func mergeMaps(result, inputMap map[string]interface{}) map[string]interface{} {
-	for k, val1 := range inputMap {
-		if val2, ok := result[k]; ok == false {
-			result[k] = val1
-		} else if reflect.TypeOf(val1).Kind() != reflect.TypeOf(val2).Kind() {
-			result[k] = val1
-		} else if reflect.TypeOf(val1).Kind() == reflect.Map {
-			result[k] = mergeMaps(
-				result[k].(map[string]interface{}),
-				val1.(map[string]interface{}),
-			)
-		} else {
-			result[k] = val1
-		}
-	}
-
-	return result
+	return json.Marshal(entireConfig)
 }
