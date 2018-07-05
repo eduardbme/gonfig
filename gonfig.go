@@ -10,54 +10,49 @@ import (
 
 // Read ...
 func Read() ([]byte, error) {
-	var err error
-
-	var configDirPath string
-
-	configDirPath, err = internal.GetConfigDirPath()
-
-	if err != nil {
+	if configDirPath, err := internal.GetConfigDirPath(); err != nil {
 		return nil, err
-	}
+	} else {
+		var configs []*internal.Config
 
-	appEnv := internal.GetAppEnv()
-
-	var defaultConfig *internal.Config
-	var envConfig *internal.Config
-	var localEnvConfig *internal.Config
-
-	defaultConfig, err = internal.NewConfig(path.Join(configDirPath, "default.json"))
-	if err != nil {
-		return nil, err
-	}
-
-	if len(appEnv) > 0 {
-		envConfig, err = internal.NewConfig(path.Join(configDirPath, fmt.Sprintf("%s.json", appEnv)))
-		if err != nil {
+		if defaultConfig, err := internal.NewFileConfig(path.Join(configDirPath, "default.json")); err != nil {
 			return nil, err
+		} else {
+			configs = append(configs, defaultConfig)
 		}
 
-		localEnvConfig, err = internal.NewConfig(path.Join(configDirPath, fmt.Sprintf("local-%s.json", appEnv)))
-		if err != nil {
-			return nil, err
+		appEnv := internal.GetAppEnv()
+
+		if len(appEnv) > 0 {
+			if envConfig, err := internal.NewFileConfig(path.Join(configDirPath, fmt.Sprintf("%s.json", appEnv))); err != nil {
+				return nil, err
+			} else {
+				configs = append(configs, envConfig)
+			}
+
+			if localEnvConfig, err := internal.NewFileConfig(path.Join(configDirPath, fmt.Sprintf("local-%s.json", appEnv))); err != nil {
+				return nil, err
+			} else {
+				configs = append(configs, localEnvConfig)
+			}
 		}
-	}
 
-	entireConfig := internal.JoinConfigs(defaultConfig, envConfig, localEnvConfig)
-
-	var configSchema *internal.Schema
-
-	configSchema, err = internal.NewSchema(path.Join(configDirPath, "schema"))
-	if err != nil {
-		return nil, err
-	}
-
-	if configSchema != nil {
-		err = configSchema.Validate(entireConfig)
-		if err != nil {
+		if cmdConfig, err := internal.NewCMDConfig(); err != nil {
 			return nil, err
+		} else {
+			configs = append(configs, cmdConfig)
 		}
-	}
 
-	return json.Marshal(entireConfig)
+		entireConfig := internal.JoinConfigs(configs)
+
+		if configSchema, err := internal.NewSchema(path.Join(configDirPath, "schema")); err != nil {
+			return nil, err
+		} else if configSchema != nil {
+			if err := configSchema.Validate(entireConfig); err != nil {
+				return nil, err
+			}
+		}
+
+		return json.Marshal(entireConfig)
+	}
 }

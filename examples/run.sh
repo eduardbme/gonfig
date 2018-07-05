@@ -2,4 +2,4 @@
 
 go build main.go
 
-APP_ENV=example ./main
+APP_ENV=example ./main --config='{"name": "new-awesome-name"}'

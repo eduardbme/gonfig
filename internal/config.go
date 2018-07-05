@@ -8,7 +8,21 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+
+	flag "github.com/spf13/pflag"
 )
+
+var commandLineConfig *string
+
+func init() {
+	flags := flag.NewFlagSet("gonfig", flag.ExitOnError)
+
+	flags.ParseErrorsWhitelist.UnknownFlags = true
+
+	commandLineConfig = flags.String("config", "{}", "config json string (default '{}')")
+
+	flags.Parse(os.Args[1:])
+}
 
 type Config struct {
 	data map[string]interface{}
@@ -40,18 +54,18 @@ func GetConfigDirPath() (configDirPath string, err error) {
 	return
 }
 
-func NewConfig(fileFullPath string) (*Config, error) {
+func NewFileConfig(fileFullPath string) (*Config, error) {
 	var err error
 	var content []byte
 
+	data := make(map[string]interface{})
+
 	content, err = ioutil.ReadFile(fileFullPath)
 	if err != nil && os.IsNotExist(err) {
-		return nil, nil
+		return &Config{data: data}, nil
 	} else if err != nil {
 		return nil, err
 	}
-
-	data := make(map[string]interface{})
 
 	if err = json.Unmarshal(content, &data); err != nil {
 		return nil, err
@@ -60,7 +74,19 @@ func NewConfig(fileFullPath string) (*Config, error) {
 	return &Config{data: data}, nil
 }
 
-func JoinConfigs(configs ...*Config) *Config {
+func NewCMDConfig() (*Config, error) {
+	var err error
+
+	data := make(map[string]interface{})
+
+	if err = json.Unmarshal([]byte(*commandLineConfig), &data); err != nil {
+		return nil, err
+	}
+
+	return &Config{data: data}, nil
+}
+
+func JoinConfigs(configs []*Config) *Config {
 	data := make(map[string]interface{})
 
 	for _, config := range configs {

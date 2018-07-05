@@ -1,4 +1,6 @@
 {
+	"comment": "",
+	"ignore": "",
 	"package": [
 		{
 			"checksumSHA1": "TGYHnpTThl7XXl0cHub5IeXP4W4=",
@@ -35,6 +37,12 @@
 			"path": "github.com/mattn/go-isatty",
 			"revision": "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c",
 			"revisionTime": "2017-11-07T05:05:31Z"
+		},
+		{
+			"checksumSHA1": "E0Q2kmBYozhTe17P7xIeAcFLiys=",
+			"path": "github.com/spf13/pflag",
+			"revision": "3ebe029320b2676d667ae88da602a5f854788a8a",
+			"revisionTime": "2018-06-01T13:25:42Z"
 		},
 		{
 			"checksumSHA1": "VQyr/RTSmHpXD2wh988ZnWCVO6w=",

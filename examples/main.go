@@ -24,7 +24,7 @@ func main() {
 		if err := json.Unmarshal(rawData, appConfig); err != nil {
 			panic(err)
 		} else {
-			fmt.Println(appConfig.DbConfig.Host, appConfig.DbConfig.Port) // prod-db-server 8000
+			fmt.Printf("{\"name\": \"%s\", \"dbConfig\": {\"host\": \"%s\", port: \"%d\"}}\n", appConfig.Name, appConfig.DbConfig.Host, appConfig.DbConfig.Port)
 		}
 	}
 }
