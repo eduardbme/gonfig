@@ -47,6 +47,10 @@ $ vi config/default.json
 **Use configs in your code:**
 
 ```go
+import (
+    gonfig "github.com/eduardbcom/gonfig"
+)
+
 type Config struct {
     DbConfig struct {
         Host string `json:"host"`
