@@ -1,4 +1,4 @@
-package config
+package gonfig
 
 import (
 	"encoding/json"
