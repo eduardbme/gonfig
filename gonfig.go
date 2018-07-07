@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path"
 
 	"github.com/eduardbcom/gonfig/internal"
@@ -21,9 +22,7 @@ func Read() ([]byte, error) {
 			configs = append(configs, defaultConfig)
 		}
 
-		appEnv := internal.GetAppEnv()
-
-		if len(appEnv) > 0 {
+		if appEnv, ok := os.LookupEnv("APP_ENV"); ok {
 			if envConfig, err := internal.NewFileConfig(path.Join(configDirPath, fmt.Sprintf("%s.json", appEnv))); err != nil {
 				return nil, err
 			} else {
