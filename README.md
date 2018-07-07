@@ -82,9 +82,9 @@ $ export APP_ENV=production
 $ go run app.go --config='{"name": "new-app-name"}'
 ```
 
-File formats
+Config file formats
 ---------------
-For now only `json` file format is supported.
+Only `json` file format is supported.
 
 Schema validation
 ---------------
