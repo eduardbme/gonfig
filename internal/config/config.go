@@ -1,4 +1,4 @@
-package internal
+package config
 
 import (
 	"encoding/json"
@@ -32,8 +32,41 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.data)
 }
 
+func NewFromFile(fileFullPath string) (*Config, error) {
+	var err error
+	var content []byte
+
+	data := make(map[string]interface{})
+
+	content, err = ioutil.ReadFile(fileFullPath)
+	if err != nil && os.IsNotExist(err) {
+		return &Config{data: data}, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal(content, &data); err != nil {
+		return nil, err
+	}
+
+	return &Config{data: data}, nil
+}
+
+func NewFromCMD() (*Config, error) {
+	var err error
+
+	data := make(map[string]interface{})
+
+	if err = json.Unmarshal([]byte(*commandLineConfig), &data); err != nil {
+		return nil, err
+	}
+
+	return &Config{data: data}, nil
+}
+
 // GetConfigDirPath checks that `config` directory exists near the executable file
-func GetConfigDirPath() (configDirPath string, err error) {
+// and returns full path to `config` directory or error.
+func GetDirPath() (configDirPath string, err error) {
 	var dir string
 
 	dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
@@ -54,39 +87,7 @@ func GetConfigDirPath() (configDirPath string, err error) {
 	return
 }
 
-func NewFileConfig(fileFullPath string) (*Config, error) {
-	var err error
-	var content []byte
-
-	data := make(map[string]interface{})
-
-	content, err = ioutil.ReadFile(fileFullPath)
-	if err != nil && os.IsNotExist(err) {
-		return &Config{data: data}, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	if err = json.Unmarshal(content, &data); err != nil {
-		return nil, err
-	}
-
-	return &Config{data: data}, nil
-}
-
-func NewCMDConfig() (*Config, error) {
-	var err error
-
-	data := make(map[string]interface{})
-
-	if err = json.Unmarshal([]byte(*commandLineConfig), &data); err != nil {
-		return nil, err
-	}
-
-	return &Config{data: data}, nil
-}
-
-func JoinConfigs(configs []*Config) *Config {
+func Join(configs []*Config) *Config {
 	data := make(map[string]interface{})
 
 	for _, config := range configs {

@@ -1,4 +1,4 @@
-package internal
+package schema
 
 import (
 	"bytes"
@@ -11,19 +11,21 @@ import (
 
 	ucl "github.com/cesanta/ucl"
 	validateJSONSchema "github.com/cesanta/validate-json/schema"
+
+	"github.com/eduardbcom/gonfig/internal/config"
 )
 
 type Schema struct {
 	validator *validateJSONSchema.Validator
 }
 
-func (s *Schema) Validate(config *Config) error {
+func (s *Schema) Validate(cfg *config.Config) error {
 	var err error
 
 	var rawConfig []byte
 	var data ucl.Value
 
-	rawConfig, err = json.Marshal(config.data)
+	rawConfig, err = json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
@@ -36,7 +38,7 @@ func (s *Schema) Validate(config *Config) error {
 	return s.validator.Validate(data)
 }
 
-func NewSchema(schemaPath string) (*Schema, error) {
+func New(schemaPath string) (*Schema, error) {
 	files := make(map[string]string)
 
 	if _files, err := ioutil.ReadDir(schemaPath); err != nil {
