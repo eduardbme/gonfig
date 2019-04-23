@@ -12,20 +12,26 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-var commandLineConfig *string
+var commandLineConfigObject *string
+var commandLineConfigPath *string
 
 func init() {
 	flags := flag.NewFlagSet("gonfig", flag.ExitOnError)
 
 	flags.ParseErrorsWhitelist.UnknownFlags = true
 
-	commandLineConfig = flags.String("config", "{}", "config json string (default '{}')")
+	commandLineConfigObject = flags.String("config", "{}", "config json string (default '{}')")
+	commandLineConfigPath = flags.String("config_dir", "", "custom config dir")
 
 	flags.Parse(os.Args[1:])
 }
 
 type Config struct {
 	data map[string]interface{}
+}
+
+func (c *Config) IsEmpty() bool {
+	return len(c.data) == 0
 }
 
 func (c *Config) MarshalJSON() ([]byte, error) {
@@ -57,7 +63,7 @@ func NewFromCMD() (*Config, error) {
 
 	data := make(map[string]interface{})
 
-	if err = json.Unmarshal([]byte(*commandLineConfig), &data); err != nil {
+	if err = json.Unmarshal([]byte(*commandLineConfigObject), &data); err != nil {
 		return nil, err
 	}
 
@@ -67,14 +73,10 @@ func NewFromCMD() (*Config, error) {
 // GetDirPath checks that `config` directory exists near the executable file
 // and returns full path to `config` directory or error.
 func GetDirPath() (configDirPath string, err error) {
-	var dir string
-
-	dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+	configDirPath, err = getConfigDir()
 	if err != nil {
 		return
 	}
-
-	configDirPath = path.Join(dir, "config")
 
 	if _, err = os.Stat(configDirPath); err != nil {
 		return
@@ -114,4 +116,16 @@ func mergeMaps(result, inputMap map[string]interface{}) map[string]interface{} {
 	}
 
 	return result
+}
+
+func getConfigDir() (string, error) {
+	if len(*commandLineConfigPath) > 0 {
+		return filepath.Abs(*commandLineConfigPath)
+	}
+
+	if dir, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
+		return "", err
+	} else {
+		return path.Join(dir, "config"), nil
+	}
 }
