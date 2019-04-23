@@ -64,7 +64,7 @@ func NewFromCMD() (*Config, error) {
 	return &Config{data: data}, nil
 }
 
-// GetConfigDirPath checks that `config` directory exists near the executable file
+// GetDirPath checks that `config` directory exists near the executable file
 // and returns full path to `config` directory or error.
 func GetDirPath() (configDirPath string, err error) {
 	var dir string
