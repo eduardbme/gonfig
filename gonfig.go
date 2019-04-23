@@ -15,6 +15,7 @@ import (
 // - config/[APP_ENV].json
 // - config/local-[APP_END].json
 // - CMD --config='{}'
+// and merge it into one object.
 func Read() ([]byte, error) {
 	if configDirPath, err := config.GetDirPath(); err != nil {
 		return nil, err
@@ -48,6 +49,10 @@ func Read() ([]byte, error) {
 		}
 
 		entireConfig := config.Join(configs)
+
+		if entireConfig.IsEmpty() {
+			fmt.Fprintf(os.Stderr, "[GONFIG][WARNING] no configuration data\n")
+		}
 
 		if configSchema, err := schema.New(path.Join(configDirPath, "schema")); err != nil {
 			return nil, err
