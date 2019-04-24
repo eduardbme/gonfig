@@ -13,10 +13,23 @@ import (
 	validateJSONSchema "github.com/cesanta/validate-json/schema"
 
 	"github.com/eduardbcom/gonfig/internal/config"
+	flag "github.com/spf13/pflag"
 )
+
+var commandLineSchemaPath *string
 
 type Schema struct {
 	validator *validateJSONSchema.Validator
+}
+
+func init() {
+	flags := flag.NewFlagSet("gonfig", flag.ExitOnError)
+
+	flags.ParseErrorsWhitelist.UnknownFlags = true
+
+	commandLineSchemaPath = flags.String("schema_dir", "", "config schema dir")
+
+	flags.Parse(os.Args[1:])
 }
 
 func (s *Schema) Validate(cfg *config.Config) error {
@@ -38,10 +51,14 @@ func (s *Schema) Validate(cfg *config.Config) error {
 	return s.validator.Validate(data)
 }
 
-func New(schemaPath string) (*Schema, error) {
+func New() (*Schema, error) {
 	files := make(map[string]string)
 
-	if _files, err := ioutil.ReadDir(schemaPath); err != nil {
+	if len(*commandLineSchemaPath) == 0 {
+		return nil, nil
+	}
+
+	if _files, err := ioutil.ReadDir(*commandLineSchemaPath); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
@@ -49,7 +66,7 @@ func New(schemaPath string) (*Schema, error) {
 		return nil, err
 	} else {
 		for _, _file := range _files {
-			files[_file.Name()] = path.Join(schemaPath, _file.Name())
+			files[_file.Name()] = path.Join(*commandLineSchemaPath, _file.Name())
 		}
 	}
 

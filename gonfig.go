@@ -54,7 +54,7 @@ func Read() ([]byte, error) {
 			fmt.Fprintf(os.Stderr, "[GONFIG][WARNING] no configuration data\n")
 		}
 
-		if configSchema, err := schema.New(path.Join(configDirPath, "schema")); err != nil {
+		if configSchema, err := schema.New(); err != nil {
 			return nil, err
 		} else if configSchema != nil {
 			if err := configSchema.Validate(entireConfig); err != nil {
