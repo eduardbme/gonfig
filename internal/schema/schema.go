@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	ucl "github.com/cesanta/ucl"
 	validateJSONSchema "github.com/cesanta/validate-json/schema"
@@ -54,11 +55,13 @@ func (s *Schema) Validate(cfg *config.Config) error {
 func New() (*Schema, error) {
 	files := make(map[string]string)
 
-	if len(*commandLineSchemaPath) == 0 {
-		return nil, nil
+	schemaDir, err := getSchemaDir()
+
+	if err != nil {
+		return nil, err
 	}
 
-	if _files, err := ioutil.ReadDir(*commandLineSchemaPath); err != nil {
+	if _files, err := ioutil.ReadDir(schemaDir); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
@@ -66,7 +69,7 @@ func New() (*Schema, error) {
 		return nil, err
 	} else {
 		for _, _file := range _files {
-			files[_file.Name()] = path.Join(*commandLineSchemaPath, _file.Name())
+			files[_file.Name()] = path.Join(schemaDir, _file.Name())
 		}
 	}
 
@@ -113,4 +116,16 @@ func readSchema(filePath string) (parsedFileContent ucl.Value, err error) {
 	}
 
 	return
+}
+
+func getSchemaDir() (string, error) {
+	if len(*commandLineSchemaPath) > 0 {
+		return filepath.Abs(*commandLineSchemaPath)
+	}
+
+	if dir, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
+		return "", err
+	} else {
+		return path.Join(dir, "schema"), nil
+	}
 }
