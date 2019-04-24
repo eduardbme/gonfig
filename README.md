@@ -88,7 +88,7 @@ Only `json` file format is supported.
 
 Schema validation
 ---------------
-In order to validate configuration using `json schema` format you need to create `schema` folder within the `config` folder.
+In order to validate configuration using `json schema` format you need to create `schema` folder and pass it via `--schema_dir` param. By default library searches `schema` folder near the application executable file and silently skips schema verification in case folder does not exist.
 
 `schema/index.json` is the entry point of schema.
 
